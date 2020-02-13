@@ -32,8 +32,6 @@
 
 . `dirname $0`/blah_load_config.sh
 
-. `dirname $0`/blah_common_submit_functions.sh
-
 usage_string="Usage: $0 -c <command> [-i <stdin>] [-o <stdout>] [-e <stderr>] [-v <environment>] [-s <yes | no>] [-- command_arguments]"
 
 workdir=$PWD
@@ -97,25 +95,7 @@ if [ -z "$temp_dir"  ] ; then
 fi
 
 shift `expr $OPTIND - 1`
-#arguments=$*
-
-{ echo arguments:
-  for x in "$@"; do
-      echo "[$x]"
-  done
-} >&2
-
-# do new-style quoting for arguments string
-dq='"'
-sq="'"
-# escape single-quote and double-quote characters (by doubling them)
-set -- "${@//$sq/$sq$sq}"
-set -- "${@//$dq/$dq$dq}"
-# map key=val -> key='val'
-set -- "${@/#/$sq}"
-set -- "${@/%/$sq}"
-arguments="\"${*}\""
-
+arguments=$*
 
 
 # Command is mandatory
@@ -246,8 +226,11 @@ fi
 # # so to get them back into Condor format we need to remove all the
 # # extra quotes. We do this by replacing '" "' with ' ' and stripping
 # # the leading and trailing "s.
-# arguments="$(echo $arguments | sed -e 's/\" \"/ /g')"
-# arguments=${arguments:1:$((${#arguments}-2))}
+if [[ $arguments = '"'*'"' ]]; then
+  arguments=${arguments//'" "'/ }
+  arguments=${arguments/#'"'}
+  arguments=${arguments/%'"'}
+fi
 
 cat > $submit_file << EOF
 universe = vanilla
@@ -341,8 +324,6 @@ fi
 now=`date +%s`
 let now=$now-1
 
-bls_save_submit
-
 full_result=$($condor_binpath/condor_submit $target $submit_file)
 return_code=$?
 
@@ -361,7 +342,7 @@ else
 fi
 
 # Clean temporary files -- There only temp file is the one we submit
-#rm -f $submit_file
+rm -f $submit_file
 
 # Create a softlink to proxy file for proxy renewal - local renewal 
 # of limited proxy only.
