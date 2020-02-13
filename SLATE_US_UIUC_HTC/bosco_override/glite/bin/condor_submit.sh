@@ -32,6 +32,8 @@
 
 . `dirname $0`/blah_load_config.sh
 
+. `dirname $0`/blah_common_submit_functions.sh
+
 usage_string="Usage: $0 -c <command> [-i <stdin>] [-o <stdout>] [-e <stderr>] [-v <environment>] [-s <yes | no>] [-- command_arguments]"
 
 workdir=$PWD
@@ -339,6 +341,8 @@ fi
 now=`date +%s`
 let now=$now-1
 
+bls_save_submit
+
 full_result=$($condor_binpath/condor_submit $target $submit_file)
 return_code=$?
 
@@ -357,8 +361,7 @@ else
 fi
 
 # Clean temporary files -- There only temp file is the one we submit
-cp $submit_file /home/mwt2-htc/submitfiles/$submit_file-$RANDOM
-rm -f $submit_file
+#rm -f $submit_file
 
 # Create a softlink to proxy file for proxy renewal - local renewal 
 # of limited proxy only.
